@@ -4,6 +4,7 @@
 #include <utility>
 #include <cmath>
 #include <string>
+#include <memory>
 #include "kvstore_api.h"
 #include "SkipList.h"
 #include "SSTable.h"

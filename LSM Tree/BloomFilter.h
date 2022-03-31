@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <bitset>
+#include <memory>
 #include <cstdint>
 #include <stdint.h>
 

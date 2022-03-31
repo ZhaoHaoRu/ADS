@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <utility>
 #include <vector>
+#include <memory>
+#include <list>
 #include <utility>
 #include <fstream>
 #include <limits.h>
@@ -55,7 +57,7 @@ private:
     uint64_t size;
     uint64_t count;
     // std::string valStr;
-    std::vector<std::pair<uint64_t, std::string>> table;
+    std::list<std::pair<uint64_t, std::string>> table;
 
 public:
     //默认的构造函数，用于写入文件时的初始化
@@ -70,7 +72,8 @@ public:
     //将SSTable中的内容写入内存
     void SSTableToFile(SSTableCache *cache);
     SSTableCache *SaveSSTable(std::string path, uint64_t num, uint32_t tSt, std::vector<std::pair<uint64_t, std::string>> &li, uint64_t min = 0, uint64_t max = 0);
-    SSTable merge(const SSTable &table1, const SSTable &table2);
-    void mergeSort(std::vector<SSTable> &Tlist);
-    std::vector<SSTableCache*> division(SSTable &Table);
+    SSTable* merge(const SSTable *table1, const SSTable *table2);
+    void mergeSort(std::vector<SSTable*> &Tlist);
+    std::vector<SSTableCache*> division(SSTable *Table);
+    ~SSTable();
 };
