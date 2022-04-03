@@ -38,6 +38,7 @@ bool SkipList::Insert(uint64_t key, std::string value)
 {
     std::vector<SKNode*> update(MAX_LEVEL);
     SKNode *x = head;
+    // std::cout << "skipList insert !" << std::endl;
     for(int i = MAX_LEVEL-1; i >= 0; --i){
         while(x->forwards[i] != NIL && x->forwards[i]->key < key){
             x = x->forwards[i];
@@ -48,9 +49,10 @@ bool SkipList::Insert(uint64_t key, std::string value)
     if(x != NIL && x->key == key){
         //string最后的斜杠零还需要考虑吗？
         if((x->val).length() > value.length() || remainSpace >= -(x->val).length() + value.length()){
-            remainSpace = remainSpace - (x->val).length() + value.length();
+            remainSpace = remainSpace + (x->val).length() - value.length();
             x->val = value;
             ++listSize;
+            // std::cout << "remainSpace at 55: " << remainSpace << std::endl; 
             return true;
         }
         else
@@ -70,6 +72,7 @@ bool SkipList::Insert(uint64_t key, std::string value)
         }
         ++listSize;
     }
+    // std::cout << "remainSpace: " << remainSpace << std::endl; 
     return true;
 }
 

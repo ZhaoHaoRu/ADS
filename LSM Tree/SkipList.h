@@ -39,7 +39,7 @@ private:
     SKNode *head;
     SKNode *NIL;
     // unsigned long long s = 1;
-    unsigned long long remainSpace;
+    signed long long remainSpace;
     double my_rand();
     int randomLevel();
     uint64_t listSize;

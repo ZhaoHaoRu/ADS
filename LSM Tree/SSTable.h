@@ -63,6 +63,7 @@ public:
     //默认的构造函数，用于写入文件时的初始化
     SSTable();
     SSTable(SSTableCache *cache);
+    size_t getEndlength();
     //在存储SSTable的文件中获取特定的string
     std::string ReadSSTable(uint32_t offset, uint32_t length, std::string fileName, bool isEnd);
     //把SSTable中的所有内容写入table
