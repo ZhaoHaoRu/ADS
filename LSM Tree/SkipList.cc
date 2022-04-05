@@ -78,9 +78,9 @@ bool SkipList::Insert(uint64_t key, std::string value)
 
 bool SkipList::Search(uint64_t key, std::string &value, bool &hasDel)
 {
-    if(key == 1)
-        int h = 1;
-    bool isfound = false;
+    // if(key == 1)
+    //     int h = 1;
+    // bool isfound = false;
     SKNode *tmp = head;
     for(int i = MAX_LEVEL - 1; i >= 0; --i){
         if(tmp->forwards[i] == NIL){
@@ -164,6 +164,25 @@ std::list<std::pair<uint64_t, std::string>> SkipList::Scan(uint64_t key_start, u
     return result;
 } 
 
+SKNode *SkipList::ScanHead(uint64_t key1, uint64_t key2)
+{
+    // std::list<std::pair<uint64_t, std::string>> result;
+    SKNode *result = nullptr;
+    SKNode *tmp = head;
+    for(int i = MAX_LEVEL - 1; i >= 0; --i){
+        if(tmp->forwards[i] == NIL){
+            continue;
+        }
+        while(tmp->forwards[i] != NIL && tmp->forwards[i]->key < key1){
+            tmp = tmp->forwards[i];
+        }
+    }
+    tmp = tmp->forwards[0];
+    if(tmp != NIL && tmp->key >= key1 && tmp->key <= key2){
+       result = tmp;
+    }
+    return result;
+}
 void SkipList::WriteOut(uint64_t &min, uint64_t &max, uint32_t &size, std::vector<std::pair<uint64_t, std::string>> &li)
 {
     SKNode *tmp = head->forwards[0];

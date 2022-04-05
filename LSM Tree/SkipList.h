@@ -51,6 +51,7 @@ public:
     bool Delete(uint64_t key);
     std::list<std::pair<uint64_t, std::string>> Scan(uint64_t key_start, uint64_t key_end);
     void Display();
+    SKNode *ScanHead(uint64_t key1, uint64_t key2);
     void WriteOut(uint64_t &min, uint64_t &max, uint32_t &size, std::vector<std::pair<uint64_t, std::string>> &li);
     void Clear();
     ~SkipList()

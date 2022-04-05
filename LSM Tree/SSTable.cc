@@ -65,7 +65,7 @@ SSTableCache::SSTableCache(std::string &bufferStr, std::string path, uint64_t nu
     }
 }
 
-bool SSTableCache::Search(const uint64_t &key, uint32_t &offset, uint32_t &length, bool &isEnd)
+bool SSTableCache::Search(const uint64_t &key, uint32_t &offset, uint32_t &length, bool &isEnd, uint64_t &pos)
 {
     // std::cout << "search key: " << key << std::endl;
     if(bloom->Search(key) == false){
@@ -96,6 +96,7 @@ bool SSTableCache::Search(const uint64_t &key, uint32_t &offset, uint32_t &lengt
                     //uint32_t的最大值初始化时会报错
                     length = INT_MAX;
                 }
+                pos = mid;
                 return true;
             }
             else if(indexTable[mid].key < key){
@@ -105,6 +106,20 @@ bool SSTableCache::Search(const uint64_t &key, uint32_t &offset, uint32_t &lengt
                 right = mid - 1;
             }
         } 
+    }
+    return false;
+}
+
+bool SSTableCache::Scan(uint64_t &key, uint64_t &pos, const uint64_t &key1, const uint64_t &key2, uint32_t &offset, uint32_t &length, bool &isEnd)
+{
+    if(minKey < key1 || maxKey > key2)
+        return false;
+    for(key = key1; key <= key2; ++key){
+        bool result = Search(key, offset, length, isEnd, pos);
+        if(result){
+            std::cout << "key: " << key << std::endl;
+            return true;
+        }
     }
     return false;
 }
@@ -279,6 +294,7 @@ std::string SSTable::ReadSSTable(uint32_t offset, uint32_t length, std::string f
     // std::cout << "line 249 size: " << length << std::endl;
     int Readsize;
     if(!file){
+        std::cout << fileName << std::endl;
         std::cout<< "can't read the file!" << std::endl;
         exit(0);
     }
@@ -369,21 +385,6 @@ std::vector<SSTableCache*> SSTable::division(SSTable *Table)
 
 SSTable* SSTable::merge(const SSTable *table1, const SSTable *table2)
 {
-    // std::string addr1 = s1.toFileName();
-    // std::string addr2 = s2.toFileName();
-    // std::ifstream file1(addr1, std::ios::binary);
-    // std::ifstream file2(addr2, std::ios::binary);
-    // SSTable newTable;
-    // SSTableCache newcache;
-    // std::vector<Index> indtable1 = s1.indexTable, indtable2 = s2.indexTable;
-    // uint64_t cap1 = s1.KVNum, cap2 = s2.KVNum, k = 0, i = 0, j = 0;
-    // newcache.timeStamp = std::max(s1.timeStamp, s2.timeStamp);
-    // while(i < cap1 && j < cap2){
-    //     if(indtable1[i].key < indtable2[j].key){
-
-    //     }
-    // }
-    // SSTable table1(*s1), table2(*s2);
     SSTable *newTable = new SSTable();
     newTable->addr = std::max(table1->addr, table2->addr);
     // SSTableCache *newcache;
@@ -428,6 +429,8 @@ SSTable* SSTable::merge(const SSTable *table1, const SSTable *table2)
     std::cout << "after merge: " << newTable->table.size() << std::endl;
     return newTable;
 }
+
+
 
 SSTable::~SSTable()
 {

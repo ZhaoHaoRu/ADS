@@ -40,6 +40,23 @@ struct
 	}
 }ValueSort;
 
+struct PointerCmp
+{
+	bool operator()(const Pointer &p1, const Pointer &p2){
+		uint64_t key1 = 0, key2 = 0;
+		if(p1.nowLevel == -1)
+			key1 = (p1.node)->key;
+		else 
+			key1 = p1.key;
+		if(p2.nowLevel == -1)
+			key2 = (p2.node)->key;
+		else
+			key2 = p2.key;
+		// std::cout << key1 << " " << key2 << std::endl;
+		return key1 > key2 || (key1 == key2 && (p1.timeStamp == -1 || p1.timeStamp > p2.timeStamp));
+	}
+};
+
 //load save后文件的读写？
 KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 {
@@ -99,7 +116,6 @@ KVStore::~KVStore()
 			delete del;
 		}
 	}
-	
 	//将Memtable现在有的内容写出来
 	std::vector<std::pair<uint64_t, std::string>> li;
 	uint64_t min = 0, max = 0;
@@ -116,8 +132,6 @@ KVStore::~KVStore()
 		++timeStamp;
 		SSTable table;
 		SSTableCache *newCache = table.SaveSSTable(dirPath, size, timeStamp, li, min, max);
-		Cache[0].insert(Cache[0].begin(), newCache);
-		compaction();
 	}
 	delete MemTable;
 }
@@ -221,7 +235,8 @@ std::string KVStore::get(uint64_t key)
  		// }
 		for(int j = 0; j < n; ++j){
 			// std::cout << "key: " << std::endl;
-			if(levelCache[j]->Search(key, offset, length, isEnd)){
+			uint64_t pos = 0;
+			if(levelCache[j]->Search(key, offset, length, isEnd, pos)){
 				// std::cout << "is searching: " << levelCache[j]->toFileName() << std::endl; 
 				SSTable readTable(levelCache[j]);
 				std::string fileName = levelCache[j]->toFileName();
@@ -238,6 +253,7 @@ std::string KVStore::get(uint64_t key)
 	result = "";
 	return result;
 }
+
 /**
  * Delete the given key-value pair if it exists.
  * Returns false iff the key is not found.
@@ -302,15 +318,139 @@ void KVStore::reset()
 	levelNum = 0;
 }
 
+// bool KVStore::findHead(uint64_t key, uint32_t offset, int level, uint64_t key1, uint64_t key2, int &ind, bool &isEnd, uint32_t &length)
+// {
+// 	int cap = Cache[level].size();
+// 	ind = 0;
+// 	length = 0;
+// 	bool isEnd = false;
+// 	for(; ind < cap; ++ind){
+// 		if(Cache[level][ind]->Scan(key, key1, key2, offset, length, isEnd))
+// 			return true;
+// 	}
+// 	return false;
+// }
 /**
  * Return a list including all the key-value pair between key1 and key2.
  * keys in the list should be in an ascending order.
  * An empty string indicates not found.
  */
-void KVStore::scan(uint64_t key1, uint64_t key2, std::list<std::pair<uint64_t, std::string> > &list)
+
+void KVStore::scan(uint64_t key1, uint64_t key2, std::list<std::pair<uint64_t, std::string>> &list)
 {	
-	list = MemTable->Scan(key1, key2);
+	// for(int i = 0; i < levelNum; ++i){
+	// 	int n = Cache[i].size();
+	// 	for(int j = 0; j < n; ++j)
+	// 		std::cout << Cache[i][j]->toFileName() << std::endl;
+	// }
+	std::ofstream file("test.txt");
+	Index tmp;
+	uint64_t key = 0, pos = 0;
+	uint32_t offset = 0, length = 0;
+	bool isEnd = false;
+	std::priority_queue<Pointer, std::vector<Pointer>, PointerCmp> queue;   
+	SKNode *node = MemTable->ScanHead(key1, key2);
+	if(node)
+		queue.push(Pointer(node));
+	//找到在每一个表和每一层的指针
+	if(Cache.size() > 0){
+		int cap = Cache[0].size();
+		for(int i = 0; i < cap; ++i){
+			if(Cache[0][i]->Scan(key, pos, key1, key2, offset, length, isEnd)){
+				queue.push(Pointer(nullptr, key, pos, length, isEnd, 0, i, Cache[0][i]->timeStamp));
+				isEnd = false;
+			}
+		}
+	}	
+	for(int i = 1; i < levelNum; ++i){
+		sort(Cache[i].begin(), Cache[i].end(), ValueSort);
+		int cap = Cache[i].size();
+		int j = 0;
+		for(; j < cap; ++j){
+			if(Cache[i][j]->Scan(key, pos, key1, key2, offset, length, isEnd)){
+				break;
+			}
+		}
+		if(j < cap){
+			Index tmp(key, offset);
+			std::cout << "position before save: " << Cache[i][j]->toFileName() << std::endl;
+			queue.push(Pointer(nullptr, key, pos, length, isEnd, i , j, Cache[i][j]->timeStamp));
+		}
+	}
+	while(!queue.empty()){
+		// std::cout << "get here!" << std::endl;
+		Pointer nowPtr = queue.top();
+		queue.pop();
+		if(nowPtr.nowLevel == -1){
+			list.emplace_back(std::pair<uint64_t, std::string>(node->key, node->val));
+			// std::cout << node->key << " " << node->val.length() << std::endl;
+			if(node->forwards[0]->type != NIL && node->forwards[0]->key <= key2){
+				queue.push(Pointer(node->forwards[0]));
+			}
+		}
+		else{
+			SSTable table;
+			SSTableCache *nowCache = Cache[nowPtr.nowLevel][nowPtr.ind];
+			// std::cout << "position: " << nowPtr.nowLevel << " " << nowPtr.ind << std::endl;
+			std::string fileName = nowCache->toFileName();
+			// if(nowPtr.isEnd == true){
+			// 	std::cout << "get end! " << std::endl;
+			// }
+			std::string val = table.ReadSSTable(nowCache->indexTable[nowPtr.pos].offset, nowPtr.length, fileName, nowPtr.isEnd);
+			if(list.empty() ||list.back().first != nowPtr.key)
+				list.emplace_back(std::pair<uint64_t, std::string>(nowPtr.key, val));
+			file << nowPtr.key;
+			file << " ";
+			file << val.length();
+			file << "\n";
+			// std::cout <<"key value: " << nowPtr.key << " " << val.length() << std::endl;
+			if(nowPtr.key != val.length() - 1)
+				std::cout << "length error! " << std::endl;
+			// if(nowPtr.key == 2029)
+			// 	std::cout << nowPtr.pos << " " << val << std::endl;
+			if(!nowPtr.isEnd){
+				try{
+					if(nowCache->indexTable[nowPtr.pos + 1].key <= key2){
+						if(nowPtr.pos + 1 < nowCache->indexTable.size() - 1){
+							length = nowCache->indexTable[nowPtr.pos + 2].offset - nowCache->indexTable[nowPtr.pos + 1].offset;
+							queue.push(Pointer(nullptr, nowCache->indexTable[nowPtr.pos + 1].key, nowPtr.pos + 1, length, false, nowPtr.nowLevel, nowPtr.ind, Cache[nowPtr.nowLevel][nowPtr.ind]->timeStamp));
+						}
+						else{
+							queue.push(Pointer(nullptr, nowCache->indexTable[nowPtr.pos + 1].key, nowPtr.pos + 1, length, true, nowPtr.nowLevel, nowPtr.ind, Cache[nowPtr.nowLevel][nowPtr.ind]->timeStamp));
+						}
+					}
+				}
+				catch(std::bad_alloc &ba){
+					std::cout << "compaction two level bug at 414" << std::endl;
+					std::cout << ba.what() << std::endl;
+					exit(0);
+				}
+			}
+			else{
+				if(nowPtr.ind != Cache[nowPtr.nowLevel].size() - 1){
+					SSTableCache *nextCache = Cache[nowPtr.nowLevel][nowPtr.ind + 1];
+					uint64_t nextpos = 0;
+					std::cout << "compare: " << nextCache->indexTable[nextpos].key  << " " << key2 << std::endl;
+					if(nextCache->indexTable[nextpos].key <= key2){
+						std::cout << "new beginning: " << nextCache->toFileName() << std::endl;
+						if(nextpos < nextCache->indexTable.size() - 1){
+							length = nextCache->indexTable[nextpos + 1].offset - nextCache->indexTable[nextpos].offset;
+							std::cout << "true push!: " << nextCache->indexTable[nextpos].key << std::endl;
+							queue.push(Pointer(nullptr, nextCache->indexTable[nextpos].key, nextpos, length, false, nowPtr.nowLevel, nowPtr.ind + 1, Cache[nowPtr.nowLevel][nowPtr.ind + 1]->timeStamp));
+						}
+						else{
+							std::cout << "true push!" << std::endl;
+							queue.push(Pointer(nullptr, nextCache->indexTable[nextpos].key, nextpos, length, true, nowPtr.nowLevel, nowPtr.ind + 1, Cache[nowPtr.nowLevel][nowPtr.ind + 1]->timeStamp));
+						}
+					}
+				}
+
+			}
+		}
+	}
+	// list = MemTable->Scan(key1, key2);
 	//还有SSTable中的内容，先不写了，用堆排序？
+
 }
 
 void KVStore::compaction()
@@ -428,6 +568,7 @@ void KVStore::campactTwo(int level)
 				}
 				auto it = Cache[hilevel].begin() + i;
 				while(it != Cache[hilevel].end() && i < n && visited[i]){
+					std::cout << (*it)->toFileName() << std::endl; 
 					it = Cache[hilevel].erase(it);
 					++i;
 				}	

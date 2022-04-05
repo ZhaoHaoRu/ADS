@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include <memory>
+#include <queue>
 #include <list>
 #include <utility>
 #include <fstream>
@@ -39,7 +40,8 @@ public:
     SSTableCache();
     SSTableCache(std::string path, uint64_t &ts, std::string dir);
     SSTableCache(std::string &bufferStr, std::string path, uint64_t num, uint32_t tSt, std::vector<std::pair<uint64_t, std::string>> &li, uint64_t min = 0, uint64_t max = 0);
-    bool Search(const uint64_t &key, uint32_t &offset, uint32_t &length, bool &isEnd);
+    bool Search(const uint64_t &key, uint32_t &offset, uint32_t &length, bool &isEnd, uint64_t &pos);
+    bool Scan(uint64_t &key, uint64_t &pos, const uint64_t &key1, const uint64_t &key2, uint32_t &offset, uint32_t &length, bool &isEnd);
     // std::vector<SSTableCache> Merge(std::vector<SSTableCache> &former); 
     std::string toFileName();
     void Reset();
