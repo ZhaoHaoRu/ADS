@@ -589,13 +589,13 @@ void KVStore::campactTwo(int level)
 	size_t size = toDel.size();
 	for(size_t i = 0; i < size; ++i){
 		std::string former = toDel[i]->toFileName();
-		std::cout << "former name: " << former << std::endl;
+		// std::cout << "former name: " << former << std::endl;
 		SSTable *newTable = nullptr;
 		try{
 			newTable = new SSTable(toDel[i]);
 			size_t s = newTable->getEndlength();
-			if(s == 0)
-				std::cout << "kvstore.cc 366 length: " << s << std::endl;
+			// if(s == 0)
+			// 	std::cout << "kvstore.cc 366 length: " << s << std::endl;
 		}
 		catch(std::bad_alloc &ba){
 			std::cout << "compaction two level bug " << "at" << p << std::endl;
@@ -617,9 +617,9 @@ void KVStore::campactTwo(int level)
 		std::vector<SSTableCache*> caches = tempTable.division(Tlist[0]);	
 		p = 383;
 		size = Cache[level + 1].size();
-		for(auto it: caches){
-			std::cout << "after merge the file: " << it->toFileName() << std::endl;  
-		}
+		// for(auto it: caches){
+		// 	std::cout << "after merge the file: " << it->toFileName() << std::endl;  
+		// }
 		Cache[hilevel].insert(Cache[hilevel].end(), caches.begin(), caches.end());
 		sort(Cache[hilevel].begin(), Cache[hilevel].end(), ValueSort);
 		std::vector<SSTableCache*>().swap(toDel);

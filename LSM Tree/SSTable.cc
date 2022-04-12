@@ -117,7 +117,7 @@ bool SSTableCache::Scan(uint64_t &key, uint64_t &pos, const uint64_t &key1, cons
     for(key = key1; key <= key2; ++key){
         bool result = Search(key, offset, length, isEnd, pos);
         if(result){
-            std::cout << "key: " << key << std::endl;
+            // std::cout << "key: " << key << std::endl;
             return true;
         }
     }
@@ -424,9 +424,9 @@ SSTable* SSTable::merge(const SSTable *table1, const SSTable *table2)
         ++j;
     }
     newTable->timeStamp = std::max(table1->timeStamp, table2->timeStamp);
-    std::cout << "before merge: " << table1->table.size() << " " << table2->table.size() << std::endl;
+    // std::cout << "before merge: " << table1->table.size() << " " << table2->table.size() << std::endl;
     newTable->count = newTable->table.size();
-    std::cout << "after merge: " << newTable->table.size() << std::endl;
+    // std::cout << "after merge: " << newTable->table.size() << std::endl;
     return newTable;
 }
 
