@@ -14,7 +14,6 @@ struct
 		int num1 = stoi(str1.substr(pos + 1));
 		pos = str2.find('f');
 		int num2 = stoi(str2.substr(pos + 1));
-		// std::cout << num1 << " " << num2 << std::endl;
 		return num1 > num2;
 	}
 }Comp;
@@ -52,8 +51,7 @@ struct PointerCmp
 			key2 = (p2.node)->key;
 		else
 			key2 = p2.key;
-		// std::cout << key1 << " " << key2 << std::endl;
-		return key1 > key2 || (key1 == key2 && (p1.timeStamp == -1 || p1.timeStamp > p2.timeStamp));
+		return key1 > key2 || (key1 == key2 && (p1.nowLevel == -1 || p1.timeStamp > p2.timeStamp));
 	}
 };
 
@@ -80,11 +78,9 @@ KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 			std::string pathName = dir + "/" + dirName;
 			fileNum = utils::scanDir(pathName, allFile);
 			sort(allFile.begin(), allFile.end(), Comp);
-			// std::cout << "get here!" << std::endl;
 			for(int i = 0; i < fileNum; ++i){
 				//这里假设从磁盘中读入的文件名只是单纯的文件名，并不带相对路径
 				std::string filePath = pathName + "/" + allFile[i];
-				// std::cout << "fileName: " << filePath << std::endl;
 				uint64_t tmpStamp = 0; 
 				SSTableCache *cache = loadFile(filePath, tmpStamp, pathName);
 				timeStamp = std::max(timeStamp, tmpStamp);
@@ -155,7 +151,7 @@ void KVStore::put(uint64_t key, const std::string &s)
 		return;
 	std::vector<std::pair<uint64_t, std::string>> li;
 	// if(s == "~DELETED~")
-	std::cout << "save file key: " << key << std::endl;
+	// std::cout << "save file key: " << key << std::endl;
 	uint64_t min = 0, max = 0;
 	uint32_t size = 0;
 	try{
@@ -178,7 +174,7 @@ void KVStore::put(uint64_t key, const std::string &s)
 		utils::_mkdir(dirPath.c_str());
 		Cache.emplace_back(std::vector<SSTableCache*>{});
 		++levelNum;
-		std::cout << levelNum << std::endl;
+		// std::cout << levelNum << std::endl;
 	}
 	++timeStamp;
 	SSTable table;
@@ -200,7 +196,7 @@ std::string KVStore::get(uint64_t key)
 {
 	std::string result;
 	bool hasDel = false;
-	if(key == 1310)
+	if(key == 9106)
 		int y = 1;
 	bool ret = MemTable->Search(key, result, hasDel);
 	// std::cout << key  << " " << ret << std::endl;
@@ -260,12 +256,16 @@ std::string KVStore::get(uint64_t key)
  */
 bool KVStore::del(uint64_t key)
 {
-	// if(key == 10000)
-	// 	std::cout << "get line 209" << std::endl;
+	if(key == 10194){
+		int y = 1;
+		std::cout << "get line 260" << std::endl;
+	}
 	std::string result = this->get(key);
 	// std::cout << "result in delete: " << key << std::endl; 
-	if(result == "")
+	if(result == ""){
+		std::cout <<"error key: " << key << std::endl;
 		return false;
+	}
 	this->put(key, "~DELETED~");
 	// if(key < 100)
 	// 	std::cout << "del key" << std::endl;
@@ -373,7 +373,7 @@ void KVStore::scan(uint64_t key1, uint64_t key2, std::list<std::pair<uint64_t, s
 		}
 		if(j < cap){
 			Index tmp(key, offset);
-			std::cout << "position before save: " << Cache[i][j]->toFileName() << std::endl;
+			// std::cout << "position before save: " << Cache[i][j]->toFileName() << std::endl;
 			queue.push(Pointer(nullptr, key, pos, length, isEnd, i , j, Cache[i][j]->timeStamp));
 		}
 	}
@@ -430,16 +430,16 @@ void KVStore::scan(uint64_t key1, uint64_t key2, std::list<std::pair<uint64_t, s
 				if(nowPtr.ind != Cache[nowPtr.nowLevel].size() - 1){
 					SSTableCache *nextCache = Cache[nowPtr.nowLevel][nowPtr.ind + 1];
 					uint64_t nextpos = 0;
-					std::cout << "compare: " << nextCache->indexTable[nextpos].key  << " " << key2 << std::endl;
+					// std::cout << "compare: " << nextCache->indexTable[nextpos].key  << " " << key2 << std::endl;
 					if(nextCache->indexTable[nextpos].key <= key2){
-						std::cout << "new beginning: " << nextCache->toFileName() << std::endl;
+						// std::cout << "new beginning: " << nextCache->toFileName() << std::endl;
 						if(nextpos < nextCache->indexTable.size() - 1){
 							length = nextCache->indexTable[nextpos + 1].offset - nextCache->indexTable[nextpos].offset;
-							std::cout << "true push!: " << nextCache->indexTable[nextpos].key << std::endl;
+							// std::cout << "true push!: " << nextCache->indexTable[nextpos].key << std::endl;
 							queue.push(Pointer(nullptr, nextCache->indexTable[nextpos].key, nextpos, length, false, nowPtr.nowLevel, nowPtr.ind + 1, Cache[nowPtr.nowLevel][nowPtr.ind + 1]->timeStamp));
 						}
 						else{
-							std::cout << "true push!" << std::endl;
+							// std::cout << "true push!" << std::endl;
 							queue.push(Pointer(nullptr, nextCache->indexTable[nextpos].key, nextpos, length, true, nowPtr.nowLevel, nowPtr.ind + 1, Cache[nowPtr.nowLevel][nowPtr.ind + 1]->timeStamp));
 						}
 					}
@@ -497,7 +497,7 @@ std::pair<uint64_t, uint64_t> computeLap(std::vector<SSTableCache*> &toDel)
 void KVStore::campactTwo(int level)
 {
 	int p = 290;
-	size_t exceedNum;
+	size_t exceedNum = 0;
 	std::vector<SSTableCache*> toDel(0);
 	std::vector<SSTable*> Tlist(0); //顺便找到SSTable
 	std::vector<std::pair<size_t, uint64_t>> timeArr(0);
@@ -505,7 +505,6 @@ void KVStore::campactTwo(int level)
 	int hilevel = level + 1;
 	std::string dirPath = root + "/level-" + std::to_string(level + 1);
 	//找出level层需要合并下移的元素
-	// std::cout << "get 345!" << std::endl;
 	try{
 		if(level == 0){
 			exceedNum = Cache[0].size();
@@ -522,13 +521,13 @@ void KVStore::campactTwo(int level)
 			//加入SSTable和toDel
 			for(size_t i = 1; i <= exceedNum; ++i){
 				toDel.emplace_back(Cache[level][length - i]);
-				// std::cout << Cache[level][length - i]->toFileName() << std::endl;
+				// std::cout << "toDel: " << Cache[level][length - i]->toFileName() << std::endl;
 				// std::cout << "label: " << level << " " << length - i << std::endl; 
 			}
 			auto it = Cache[level].begin() + (length - exceedNum);
 			//将这里多余的部分删除
 			while(it != Cache[level].end()){
-				std::cout << (*it)->toFileName() << std::endl; 
+				// std::cout << (*it)->toFileName() << std::endl; 
 				it = Cache[level].erase(it);
 			}
 			p = 316;
@@ -545,8 +544,8 @@ void KVStore::campactTwo(int level)
 	//如果不是最低层,寻找重叠的部分并将相应的cache删除
 	try{
 		if(level < levelNum - 1){
-			std::cout << level << " " << levelNum << std::endl;
-			std::cout << "size: " << Cache[hilevel].size() << std::endl; 
+			// std::cout << level << " " << levelNum << std::endl;
+			// std::cout << "size: " << Cache[hilevel].size() << std::endl; 
 			std::vector<bool> visited(Cache[hilevel].size(), false);
 			std::pair<uint64_t, uint64_t> interval = computeLap(toDel);
 			size_t i = 0, n = Cache[hilevel].size();
@@ -568,7 +567,7 @@ void KVStore::campactTwo(int level)
 				}
 				auto it = Cache[hilevel].begin() + i;
 				while(it != Cache[hilevel].end() && i < n && visited[i]){
-					std::cout << (*it)->toFileName() << std::endl; 
+					// std::cout << (*it)->toFileName() << std::endl; 
 					it = Cache[hilevel].erase(it);
 					++i;
 				}	
@@ -594,8 +593,10 @@ void KVStore::campactTwo(int level)
 		try{
 			newTable = new SSTable(toDel[i]);
 			size_t s = newTable->getEndlength();
-			// if(s == 0)
-			// 	std::cout << "kvstore.cc 366 length: " << s << std::endl;
+			if(s == 0){
+				std::cout << "error file: " << toDel[i]->toFileName() << std::endl;
+				std::cout << "kvstore.cc 366 length: " << s << std::endl;
+			}
 		}
 		catch(std::bad_alloc &ba){
 			std::cout << "compaction two level bug " << "at" << p << std::endl;
@@ -622,6 +623,12 @@ void KVStore::campactTwo(int level)
 		// }
 		Cache[hilevel].insert(Cache[hilevel].end(), caches.begin(), caches.end());
 		sort(Cache[hilevel].begin(), Cache[hilevel].end(), ValueSort);
+		int vecSize = toDel.size();
+		for(int i = vecSize - 1; i >= 0; --i){
+			SSTableCache* tmp = toDel.back();
+			toDel.pop_back();
+			delete tmp;
+		}
 		std::vector<SSTableCache*>().swap(toDel);
 		size_t lens = Tlist.size();
 		for(size_t k = 0; k < lens; ++k){
@@ -635,6 +642,12 @@ void KVStore::campactTwo(int level)
 			std::cout << ba.what() << std::endl;
 			exit(0);
 	}
+	// vecSize = Tlist.size();
+	// for(int i = vecSize - 1; i >= 0; --i){
+	// 	SSTable* tmp = Tlist.back();
+	// 	Tlist.pop_back();
+	// 	delete tmp;
+	// }
 	std::vector<SSTable*>().swap(Tlist);
 	std::vector<std::pair<size_t, uint64_t>>().swap(timeArr);
 	std::vector<std::string>().swap(toDelFileName);	

@@ -11,6 +11,7 @@
 #include <fstream>
 #include <limits.h>
 #include <algorithm>
+#include <string.h>
 #include "BloomFilter.h"
 #include "SkipList.h"
 
@@ -39,7 +40,7 @@ public:
     //用目前已经存在的文件初始化SSTableCache
     SSTableCache();
     SSTableCache(std::string path, uint64_t &ts, std::string dir);
-    SSTableCache(std::string &bufferStr, std::string path, uint64_t num, uint32_t tSt, std::vector<std::pair<uint64_t, std::string>> &li, uint64_t min = 0, uint64_t max = 0);
+    SSTableCache(uint64_t &buffer_size, std::string &bufferStr, std::string path, uint64_t num, uint32_t tSt, std::vector<std::pair<uint64_t, std::string>> &li, uint64_t min = 0, uint64_t max = 0);
     bool Search(const uint64_t &key, uint32_t &offset, uint32_t &length, bool &isEnd, uint64_t &pos);
     bool Scan(uint64_t &key, uint64_t &pos, const uint64_t &key1, const uint64_t &key2, uint32_t &offset, uint32_t &length, bool &isEnd);
     // std::vector<SSTableCache> Merge(std::vector<SSTableCache> &former); 
@@ -56,6 +57,7 @@ private:
     //存储的路径，这里假设存储的路径即"./data/level-0"的形式
     std::string addr;
     uint64_t timeStamp;
+    //这里size和count有什么区别嘛？count是键值对的数目？
     uint64_t size;
     uint64_t count;
     // std::string valStr;
@@ -74,7 +76,7 @@ public:
     void setAddr(std::string &address);
     //将SSTable中的内容写入内存
     void SSTableToFile(SSTableCache *cache);
-    SSTableCache *SaveSSTable(std::string path, uint64_t num, uint32_t tSt, std::vector<std::pair<uint64_t, std::string>> &li, uint64_t min = 0, uint64_t max = 0);
+    SSTableCache *SaveSSTable( std::string path, uint64_t num, uint32_t tSt, std::vector<std::pair<uint64_t, std::string>> &li, uint64_t min = 0, uint64_t max = 0);
     SSTable* merge(const SSTable *table1, const SSTable *table2);
     void mergeSort(std::vector<SSTable*> &Tlist);
     std::vector<SSTableCache*> division(SSTable *Table);
