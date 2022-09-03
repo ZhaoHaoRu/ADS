@@ -1,0 +1,17 @@
+# ninja log v5
+1	1137	6752741116247769	CMakeFiles/Kruskal.dir/Kruskal_parallel.cpp.obj	32abbf3d6f9cf808
+1139	1959	6752741124514008	Kruskal.exe	d617b82ef4a975aa
+1	1016	6752746316192982	CMakeFiles/Kruskal.dir/Kruskal_parallel.cpp.obj	32abbf3d6f9cf808
+1018	1296	6752746318716793	Kruskal.exe	d617b82ef4a975aa
+1	927	6752747205716726	CMakeFiles/Kruskal.dir/Kruskal_parallel.cpp.obj	32abbf3d6f9cf808
+929	1303	6752747209067062	Kruskal.exe	d617b82ef4a975aa
+1	1548	6752747386792677	CMakeFiles/Kruskal.dir/Kruskal_parallel.cpp.obj	32abbf3d6f9cf808
+1550	1904	6752747390086364	Kruskal.exe	d617b82ef4a975aa
+1	1056	6752747886835947	CMakeFiles/Kruskal.dir/Kruskal_parallel.cpp.obj	32abbf3d6f9cf808
+1058	1349	6752747889433884	Kruskal.exe	d617b82ef4a975aa
+1	1399	6752749218762057	CMakeFiles/Kruskal.dir/Kruskal_parallel.cpp.obj	32abbf3d6f9cf808
+1400	1684	6752749221292614	Kruskal.exe	d617b82ef4a975aa
+1	1470	6752749531645972	CMakeFiles/Kruskal.dir/Kruskal_parallel.cpp.obj	32abbf3d6f9cf808
+1471	1749	6752749534112427	Kruskal.exe	d617b82ef4a975aa
+0	1711	6752749646706479	CMakeFiles/Kruskal.dir/Kruskal_parallel.cpp.obj	32abbf3d6f9cf808
+1712	2035	6752749649627477	Kruskal.exe	d617b82ef4a975aa
